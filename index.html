@@ -1,0 +1,112 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kemopetrol Invaders</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      font-family: monospace;
+      text-align: center;
+      color: white;
+    }
+    #scoreboard {
+      font-size: 18px;
+      margin: 10px;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: black;
+      touch-action: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="scoreboard">SCORE: <span id="score">0</span></div>
+  <canvas id="gameCanvas" width="400" height="600"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("score");
+
+    const alienImg = new Image();
+    alienImg.src = "kemoukko.png";
+
+    const player = { x: 180, y: 550, w: 40, h: 20, speed: 5 };
+    const bullets = [];
+    const aliens = [];
+    let score = 0;
+
+    const rows = 5, cols = 7;
+    const spacing = 50;
+    alienImg.onload = () => {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          aliens.push({ x: 30 + c * spacing, y: 50 + r * spacing, w: 30, h: 30, alive: true });
+        }
+      }
+      draw();
+    };
+
+    function shoot() {
+      bullets.push({ x: player.x + player.w / 2 - 2, y: player.y, w: 4, h: 10 });
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') player.x -= player.speed;
+      if (e.key === 'ArrowRight') player.x += player.speed;
+      if (e.key === ' ' || e.key === 'ArrowUp') shoot();
+    });
+
+    canvas.addEventListener('click', shoot);
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'lime';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+
+      // Draw and move bullets
+      ctx.fillStyle = 'white';
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.y -= 5;
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+
+        // check collision
+        for (let alien of aliens) {
+          if (
+            alien.alive &&
+            b.x < alien.x + alien.w &&
+            b.x + b.w > alien.x &&
+            b.y < alien.y + alien.h &&
+            b.y + b.h > alien.y
+          ) {
+            alien.alive = false;
+            bullets.splice(i, 1);
+            score += 10;
+            scoreDisplay.textContent = score;
+            break;
+          }
+        }
+
+        if (b.y < 0) bullets.splice(i, 1);
+      }
+
+      // Draw aliens
+      for (let alien of aliens) {
+        if (alien.alive) ctx.drawImage(alienImg, alien.x, alien.y, alien.w, alien.h);
+      }
+
+      // Draw barriers
+      ctx.fillStyle = '#00FF00';
+      [60, 160, 260].forEach(x => ctx.fillRect(x, 480, 30, 10));
+
+      requestAnimationFrame(draw);
+    }
+  </script>
+</body>
+</html>
